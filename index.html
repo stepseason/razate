@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>rzt</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-neutral-900 text-white">
@@ -23,6 +24,20 @@
                     individual: 5,
                     atmo: 1,
                     coverUrl: null,
+                    trackName: '',
+                    artistName: '',
+                    releaseType: 'single',
+                    reviewTitle: '',
+                    reviewText: '',
+                    errorMessage: '',
+                    saving: false,
+                    supabase: null,
+                    initSupabase() {
+                        this.supabase = window.supabase.createClient(
+                            'https://rxriiwrirhdqhhegmbku.supabase.co',
+                            'sb_publishable_AikWPC8foHSkbGuU8rUBcg_zjocndsx'
+                        );
+                    },
                     atmoWeightMap: {
                         1: 1.0000, 2: 1.0675, 3: 1.1349, 4: 1.2024, 5: 1.2699,
                         6: 1.3373, 7: 1.4048, 8: 1.4723, 9: 1.5397, 10: 1.6072
@@ -33,16 +48,75 @@
                     handleCoverChange(event) {
                         const file = event.target.files[0];
                         if (!file || !file.type.startsWith('image/')) return;
-                        if (this.coverUrl) URL.revokeObjectURL(this.coverUrl);
-                        this.coverUrl = URL.createObjectURL(file);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            this.coverUrl = reader.result;
+                        };
+                        reader.readAsDataURL(file);
                         event.target.value = '';
+                    },
+                    async saveReview() {
+                        this.errorMessage = '';
+                        const title = this.reviewTitle.trim();
+                        const text = this.reviewText.trim();
+                        if (!title || !text) {
+                            this.errorMessage = 'Заполни заголовок и текст рецензии';
+                            return;
+                        }
+
+                        if (!this.supabase) {
+                            this.errorMessage = 'Нет подключения к базе данных';
+                            return;
+                        }
+
+                        const review = {
+                            track_name: this.trackName.trim(),
+                            artist_name: this.artistName.trim(),
+                            release_type: this.releaseType,
+                            review_title: title,
+                            review_text: text,
+                            cover_url: this.coverUrl,
+                            scores: {
+                                rhymes: this.rhymes,
+                                structure: this.structure,
+                                realize: this.realize,
+                                individual: this.individual,
+                                atmo: this.atmo
+                            },
+                            total: Math.round(this.total)
+                        };
+
+                        this.saving = true;
+                        const { error } = await this.supabase.from('reviews').insert(review);
+                        this.saving = false;
+
+                        if (error) {
+                            this.errorMessage = 'Не удалось сохранить рецензию: ' + error.message;
+                            return;
+                        }
+
+                        window.location.href = 'reviews.html';
+                    },
+                    resetForm() {
+                        this.trackName = '';
+                        this.artistName = '';
+                        this.releaseType = 'single';
+                        this.reviewTitle = '';
+                        this.reviewText = '';
+                        this.rhymes = 5;
+                        this.structure = 5;
+                        this.realize = 5;
+                        this.individual = 5;
+                        this.atmo = 1;
+                        this.coverUrl = null;
+                        this.errorMessage = '';
                     },
                     get total() {
                         const base = (this.rhymes + this.structure + this.realize + this.individual) * 1.4;
                         const atmoMultiplier = this.atmoWeightMap[this.atmo];
                         return base * atmoMultiplier;
                     }
-                }">
+                }" x-init="initSupabase()">
                 <div class="grid grid-cols-1 grid-rows-[auto_150px] md:grid-cols-[7.5rem_1fr] md:grid-rows-1 gap-4 justify-center items-center bg-neutral-800 p-4 rounded-2xl mb-4">
                     <div class="w-full aspect-square overflow-hidden rounded-lg relative flex items-center justify-center bg-neutral-700 hover:opacity-80">
                         <input x-ref="coverInput" @change="handleCoverChange" class="hidden" type="file" accept="image/*">
@@ -55,10 +129,10 @@
                             </template>
                         </button>
                     </div>
-                    <form class="flex flex-col gap-2 justify-between h-full" action="">
-                        <input class="border border-neutral-700 rounded-lg px-2 h-full font-medium" type="text" placeholder="Название">
-                        <input class="border border-neutral-700 rounded-lg px-2 h-full" type="text" placeholder="Исполнитель">
-                        <select class="border border-neutral-700 rounded-lg px-2 h-full appearance-none text-neutral-400" name="type" id="type">
+                    <form class="flex flex-col gap-2 justify-between h-full" @submit.prevent>
+                        <input class="border border-neutral-700 rounded-lg px-2 h-full font-medium" x-model="trackName" type="text" placeholder="Название">
+                        <input class="border border-neutral-700 rounded-lg px-2 h-full" x-model="artistName" type="text" placeholder="Исполнитель">
+                        <select class="border border-neutral-700 rounded-lg px-2 h-full appearance-none text-neutral-400" x-model="releaseType" name="type" id="type">
                             <option class="text-black" value="single">Сингл</option>
                             <option class="text-black" value="album">Альбом</option>
                         </select>
@@ -92,22 +166,19 @@
                         <input class="w-full col-span-2 accent-violet-400 cursor-grab" x-model.number="atmo" type="range" name="volume" id="volume" min="1" max="10" value="1">
                     </article>
                 <section class="w-full gap-2 flex flex-col mb-4">
-                    <input class="w-full border border-neutral-700 rounded-lg p-2 font-medium" type="text" placeholder="Заголовок рецензии">
-                    <textarea class="w-full border border-neutral-700 rounded-lg p-2 text-sm" name="" id="" placeholder="Текст рецензии (до 500 символов)" maxlength="500"></textarea>
+                    <input class="w-full border border-neutral-700 rounded-lg p-2 font-medium" x-model="reviewTitle" type="text" placeholder="Заголовок рецензии">
+                    <textarea class="w-full border border-neutral-700 rounded-lg p-2 text-sm" x-model="reviewText" name="" id="" placeholder="Текст рецензии (до 500 символов)" maxlength="500"></textarea>
+                    <p class="text-sm text-red-400" x-show="errorMessage" x-text="errorMessage"></p>
                 </section>
                 <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center">
-                    <a href="">
-                        <button class="flex justify-center items-center bg-neutral-800 text-neutral-600 w-10 h-10 rounded-lg cursor-pointer">
-                            <img class=" h-full invert opacity-40 p-2" src="img/trash-can-svgrepo-com.svg" alt="">
-                        </button>
-                    </a>
+                    <button @click="resetForm" class="flex justify-center items-center bg-neutral-800 text-neutral-600 w-10 h-10 rounded-lg cursor-pointer hover:bg-neutral-700" type="button">
+                        <img class="h-full invert opacity-40 p-2" src="img/trash-can-svgrepo-com.svg" alt="">
+                    </button>
                     <p class="relative right-6 justify-self-end">
                         <span class="text-4xl font-bold" x-text="Math.round(total)"></span>
                         <span class="absolute text-gray-400 ml-1">/90</span>
                     </p>
-                    <a href="">
-                        <button class="flex justify-center items-center bg-white text-black h-15 w-15 rounded-full cursor-pointer hover:opacity-80" type="button">✓</button>
-                    </a>
+                    <button @click="saveReview" :disabled="saving" class="flex justify-center items-center bg-white text-black h-15 w-15 rounded-full cursor-pointer hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed" type="button">✓</button>
                 </div>
                 
             </section>

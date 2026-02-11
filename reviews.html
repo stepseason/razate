@@ -1,0 +1,151 @@
+﻿<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рецензии | НМД</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-neutral-900 text-white">
+    <div class="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8" x-data="reviewsPage()" x-init="loadReviews()">
+        <header class="mb-8 flex items-center justify-between gap-3">
+            <h1 class="text-3xl font-black italic sm:text-5xl">НМД<span class="text-base">®</span> Рецензии</h1>
+            <a href="rzt.html" class="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black hover:opacity-80">Новая рецензия</a>
+        </header>
+
+        <section class="mb-6 flex items-center justify-between rounded-2xl border border-neutral-700 bg-neutral-800 p-4">
+            <p class="text-sm text-neutral-300">
+                Всего рецензий: <span class="font-semibold text-white" x-text="reviews.length"></span>
+            </p>
+            <button
+                type="button"
+                @click="clearAll()"
+                class="rounded-lg bg-neutral-700 px-3 py-2 text-xs font-semibold text-neutral-200 hover:bg-neutral-600"
+                x-show="reviews.length"
+            >
+                Очистить все
+            </button>
+        </section>
+        <p class="mb-4 text-sm text-red-400" x-show="errorMessage" x-text="errorMessage"></p>
+
+        <section class="space-y-4" x-show="reviews.length">
+            <template x-for="review in reviews" :key="review.id">
+                <article class="rounded-2xl border border-neutral-700 bg-neutral-800 p-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-[7.5rem_1fr]">
+                        <div class="aspect-square w-full overflow-hidden rounded-lg bg-neutral-700">
+                            <template x-if="review.coverUrl">
+                                <img :src="review.coverUrl" alt="Обложка" class="h-full w-full object-cover">
+                            </template>
+                            <template x-if="!review.coverUrl">
+                                <div class="flex h-full w-full items-center justify-center px-2 text-center text-xs text-neutral-400">Обложка не загружена</div>
+                            </template>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h2 class="text-lg font-bold" x-text="review.reviewTitle"></h2>
+                                    <p class="text-sm text-neutral-300" x-text="formatMeta(review)"></p>
+                                </div>
+                                <button
+                                    type="button"
+                                    @click="removeReview(review.id)"
+                                    class="rounded-md bg-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-600"
+                                >
+                                    Удалить
+                                </button>
+                            </div>
+
+                            <p class="text-sm leading-relaxed text-neutral-200" x-text="review.reviewText"></p>
+
+                            <div class="grid grid-cols-2 gap-2 text-xs text-neutral-300 sm:grid-cols-3">
+                                <p>Рифмы: <span class="text-white" x-text="review.scores?.rhymes ?? '-' "></span></p>
+                                <p>Структура: <span class="text-white" x-text="review.scores?.structure ?? '-' "></span></p>
+                                <p>Реализация: <span class="text-white" x-text="review.scores?.realize ?? '-' "></span></p>
+                                <p>Харизма: <span class="text-white" x-text="review.scores?.individual ?? '-' "></span></p>
+                                <p>Вайб: <span class="text-white" x-text="review.scores?.atmo ?? '-' "></span></p>
+                                <p>Итог: <span class="text-white font-semibold" x-text="review.total ?? '-' "></span>/90</p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </template>
+        </section>
+
+        <section x-show="!reviews.length" class="rounded-2xl border border-dashed border-neutral-700 bg-neutral-800 p-8 text-center">
+            <p class="text-neutral-300">Пока нет сохранённых рецензий.</p>
+            <a href="rzt.html" class="mt-4 inline-block rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black hover:opacity-80">Создать первую</a>
+        </section>
+    </div>
+
+    <script>
+        const supabaseClient = window.supabase.createClient(
+            'https://rxriiwrirhdqhhegmbku.supabase.co',
+            'sb_publishable_AikWPC8foHSkbGuU8rUBcg_zjocndsx'
+        );
+
+        function reviewsPage() {
+            return {
+                reviews: [],
+                errorMessage: '',
+                async loadReviews() {
+                    this.errorMessage = '';
+                    const { data, error } = await supabaseClient
+                        .from('reviews')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (error) {
+                        this.errorMessage = 'Не удалось загрузить рецензии: ' + error.message;
+                        this.reviews = [];
+                        return;
+                    }
+
+                    this.reviews = (data || []).map((review) => ({
+                        id: review.id,
+                        trackName: review.track_name || '',
+                        artistName: review.artist_name || '',
+                        releaseType: review.release_type || 'single',
+                        reviewTitle: review.review_title || '',
+                        reviewText: review.review_text || '',
+                        coverUrl: review.cover_url || null,
+                        scores: review.scores || {},
+                        total: review.total ?? '-',
+                        createdAt: review.created_at
+                    }));
+                },
+                async removeReview(id) {
+                    this.errorMessage = '';
+                    const { error } = await supabaseClient.from('reviews').delete().eq('id', id);
+                    if (error) {
+                        this.errorMessage = 'Не удалось удалить рецензию: ' + error.message;
+                        return;
+                    }
+                    this.reviews = this.reviews.filter((review) => review.id !== id);
+                },
+                async clearAll() {
+                    this.errorMessage = '';
+                    const ids = this.reviews.map((review) => review.id);
+                    if (!ids.length) return;
+
+                    const { error } = await supabaseClient.from('reviews').delete().in('id', ids);
+                    if (error) {
+                        this.errorMessage = 'Не удалось очистить список: ' + error.message;
+                        return;
+                    }
+                    this.reviews = [];
+                },
+                formatMeta(review) {
+                    const parts = [];
+                    if (review.trackName) parts.push(review.trackName);
+                    if (review.artistName) parts.push(review.artistName);
+                    if (review.releaseType) parts.push(review.releaseType === 'album' ? 'Альбом' : 'Сингл');
+                    return parts.length ? parts.join(' • ') : 'Без привязки к релизу';
+                }
+            };
+        }
+    </script>
+</body>
+</html>
