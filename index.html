@@ -8,61 +8,108 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-neutral-900 text-white">
-    <div class="px-[10vw] lg:px-[30vw]">
-        <main class="h-screen w-full flex flex-col justify-center items-center">
-            <header>
-                <h1 class="text-8xl font-black mb-8 italic">НМД<span class="text-lg">®</span></h1>
+    <div class="px-[10vw] md:px-[20vw] lg:px-[30vw] my-[10vw] sm:my-0">
+        
+        <main class="min-h-screen w-full flex flex-col justify-center items-center">
+            <header class="h-full w-full flex justify-center items-center">
+                <!-- <a href="index.html"> -->
+                    <h1 class="text-8xl font-black mb-8 italic hover:opacity-80">НМД<span class="text-lg">®</span></h1>
+                <!-- </a> -->
             </header>
             <section class="w-full" x-data="{
-                rhymes: 5,
-                structure: 5,
-                realize: 5,
-                individual: 5,
-                atmo: 1,
-                atmoWeightMap: {
-                    1: 1.0000, 2: 1.0675, 3: 1.1349, 4: 1.2024, 5: 1.2699,
-                    6: 1.3373, 7: 1.4048, 8: 1.4723, 9: 1.5397, 10: 1.6072
-                },
-                get total() {
-                    const base = (this.rhymes + this.structure + this.realize + this.individual) * 1.4;
-                    const atmoMultiplier = this.atmoWeightMap[this.atmo];
-                    return base * atmoMultiplier;
-                }
-            }">
-                <div class="grid grid-cols-1 gap-2 bg-gray-800 border border-blue-400 p-4 rounded-2xl mb-4">
-                    <div class="grid grid-cols-[1fr_auto] w-full text-base font-semibold items-center">
+                    rhymes: 5,
+                    structure: 5,
+                    realize: 5,
+                    individual: 5,
+                    atmo: 1,
+                    coverUrl: null,
+                    atmoWeightMap: {
+                        1: 1.0000, 2: 1.0675, 3: 1.1349, 4: 1.2024, 5: 1.2699,
+                        6: 1.3373, 7: 1.4048, 8: 1.4723, 9: 1.5397, 10: 1.6072
+                    },
+                    selectCover() {
+                        this.$refs.coverInput.click();
+                    },
+                    handleCoverChange(event) {
+                        const file = event.target.files[0];
+                        if (!file || !file.type.startsWith('image/')) return;
+                        if (this.coverUrl) URL.revokeObjectURL(this.coverUrl);
+                        this.coverUrl = URL.createObjectURL(file);
+                        event.target.value = '';
+                    },
+                    get total() {
+                        const base = (this.rhymes + this.structure + this.realize + this.individual) * 1.4;
+                        const atmoMultiplier = this.atmoWeightMap[this.atmo];
+                        return base * atmoMultiplier;
+                    }
+                }">
+                <div class="grid grid-cols-1 grid-rows-[auto_150px] md:grid-cols-[7.5rem_1fr] md:grid-rows-1 gap-4 justify-center items-center bg-neutral-800 p-4 rounded-2xl mb-4">
+                    <div class="w-full aspect-square overflow-hidden rounded-lg relative flex items-center justify-center bg-neutral-700 hover:opacity-80">
+                        <input x-ref="coverInput" @change="handleCoverChange" class="hidden" type="file" accept="image/*">
+                        <button @click="selectCover" class="w-full h-full rounded-lg overflow-hidden relative cursor-pointer" type="button">
+                            <template x-if="coverUrl">
+                                <img class="w-full h-full object-cover" :src="coverUrl" alt="Обложка">
+                            </template>
+                            <template x-if="!coverUrl">
+                                <span class="h-full w-full flex items-center justify-center text-xs text-neutral-300 px-2 text-center">Нажми, чтобы загрузить обложку</span>
+                            </template>
+                        </button>
+                    </div>
+                    <form class="flex flex-col gap-2 justify-between h-full" action="">
+                        <input class="border border-neutral-700 rounded-lg px-2 h-full font-medium" type="text" placeholder="Название">
+                        <input class="border border-neutral-700 rounded-lg px-2 h-full" type="text" placeholder="Исполнитель">
+                        <select class="border border-neutral-700 rounded-lg px-2 h-full appearance-none text-neutral-400" name="type" id="type">
+                            <option class="text-black" value="single">Сингл</option>
+                            <option class="text-black" value="album">Альбом</option>
+                        </select>
+                    </form>
+                </div>
+                <div class="grid grid-cols-1 gap-4 bg-gray-900 border border-gray-600 p-4 rounded-2xl mb-4">
+                    <article class="grid grid-cols-[1fr_auto] gap-2 w-full text-base font-semibold items-center">
                         <p>Рифмы/Образы</p>
                         <span class="justify-self-end text-lg" x-text="rhymes"></span>
-                        <input class="w-full col-span-2 accent-blue-500" x-model.number="rhymes" type="range" name="volume" id="volume" min="1" max="10" value="5">
-                    </div>
-                    <div class="grid grid-cols-[1fr_auto] w-full text-base font-semibold items-center">
+                        <input class="w-full col-span-2 accent-blue-700 cursor-grab" x-model.number="rhymes" type="range" name="volume" id="volume" min="1" max="10" value="5">
+                    </article>
+                    <article class="grid grid-cols-[1fr_auto] gap-2 w-full text-base font-semibold items-center">
                         <p>Структура</p>
                         <span class="justify-self-end text-lg" x-text="structure"></span>
-                        <input class="w-full col-span-2 accent-blue-500" x-model.number="structure" type="range" name="volume" id="volume" min="1" max="10" value="5">
-                    </div>
-                    <div class="grid grid-cols-[1fr_auto] w-full text-base font-semibold items-center">
+                        <input class="w-full col-span-2 accent-blue-700 cursor-grab" x-model.number="structure" type="range" name="volume" id="volume" min="1" max="10" value="5">
+                    </article>
+                    <article class="grid grid-cols-[1fr_auto] gap-2 w-full text-base font-semibold items-center">
                         <p>Реализация</p>
                         <span class="justify-self-end text-lg" x-text="realize"></span>
-                        <input class="w-full col-span-2 accent-blue-500" x-model.number="realize" type="range" name="volume" id="volume" min="1" max="10" value="5">
-                    </div>
-                        <div class="grid grid-cols-[1fr_auto] w-full text-base font-semibold items-center">
-                            <p>Индивидуальность/Харизма</p>
+                        <input class="w-full col-span-2 accent-blue-700 cursor-grab" x-model.number="realize" type="range" name="volume" id="volume" min="1" max="10" value="5">
+                    </article>
+                    <article class="grid grid-cols-[1fr_auto] gap-2 w-full text-base font-semibold items-center">
+                        <p>Индивидуальность/Харизма</p>
                         <span class="justify-self-end text-lg" x-text="individual"></span>
-                        <input class="w-full col-span-2 accent-blue-500" x-model.number="individual" type="range" name="volume" id="volume" min="1" max="10" value="5">
-                    </div>
+                        <input class="w-full col-span-2 accent-blue-700 cursor-grab" x-model.number="individual" type="range" name="volume" id="volume" min="1" max="10" value="5">
+                    </article>
+                </div>
+                    <article class="grid grid-cols-[1fr_auto] gap-2 w-full text-base font-semibold items-center bg-violet-950 border border-violet-800 p-4 rounded-2xl mb-4">
+                        <p>Атмосфера/Вайб</p>
+                        <span class="justify-self-end text-lg" x-text="atmo"></span>
+                        <input class="w-full col-span-2 accent-violet-400 cursor-grab" x-model.number="atmo" type="range" name="volume" id="volume" min="1" max="10" value="1">
+                    </article>
+                <section class="w-full gap-2 flex flex-col mb-4">
+                    <input class="w-full border border-neutral-700 rounded-lg p-2 font-medium" type="text" placeholder="Заголовок рецензии">
+                    <textarea class="w-full border border-neutral-700 rounded-lg p-2 text-sm" name="" id="" placeholder="Текст рецензии (до 500 символов)" maxlength="500"></textarea>
+                </section>
+                <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center">
+                    <a href="">
+                        <button class="flex justify-center items-center bg-neutral-800 text-neutral-600 w-10 h-10 rounded-lg cursor-pointer">
+                            <img class=" h-full invert opacity-40 p-2" src="img/trash-can-svgrepo-com.svg" alt="">
+                        </button>
+                    </a>
+                    <p class="relative right-6 justify-self-end">
+                        <span class="text-4xl font-bold" x-text="Math.round(total)"></span>
+                        <span class="absolute text-gray-400 ml-1">/90</span>
+                    </p>
+                    <a href="">
+                        <button class="flex justify-center items-center bg-white text-black h-15 w-15 rounded-full cursor-pointer hover:opacity-80" type="button">✓</button>
+                    </a>
                 </div>
                 
-                <div class="grid grid-cols-[1fr_auto] w-full text-base font-semibold items-center bg-violet-950 border border-violet-400 p-4 rounded-2xl mb-4">
-                    <p>Атмосфера/Вайб</p>
-                    <span class="justify-self-end text-lg" x-text="atmo"></span>
-                    <input class="w-full col-span-2 accent-violet-400" x-model.number="atmo" type="range" name="volume" id="volume" min="1" max="10" value="1">
-                </div>
-                <div class="justify-self-end">
-                    <p class="relative right-5">
-                        <span class="text-4xl font-bold" x-text="Math.round(total)"></span>
-                        <span class="absolute text-gray-400">/90</span>
-                    </p>
-                </div>
             </section>
         </main>
     </div>
