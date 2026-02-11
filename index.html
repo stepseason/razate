@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rzt</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-neutral-900 text-white">
+    <div class="px-[10vw] lg:px-[30vw]">
+        <main class="h-screen w-full flex flex-col justify-center items-center">
+            <header>
+                <h1 class="text-8xl font-black mb-8 italic">НМД<span class="text-lg">®</span></h1>
+            </header>
+            <section class="w-full" x-data="{
+                rhymes: 5,
+                structure: 5,
+                realize: 5,
+                individual: 5,
+                atmo: 1,
+                atmoWeightMap: {
+                    1: 1.0000, 2: 1.0675, 3: 1.1349, 4: 1.2024, 5: 1.2699,
+                    6: 1.3373, 7: 1.4048, 8: 1.4723, 9: 1.5397, 10: 1.6072
+                },
+                get total() {
+                    const base = (this.rhymes + this.structure + this.realize + this.individual) * 1.4;
+                    const atmoMultiplier = this.atmoWeightMap[this.atmo];
+                    return base * atmoMultiplier;
+                }
+            }">
+                <div class="grid grid-cols-1 gap-2 bg-gray-800 border border-blue-400 p-4 rounded-2xl mb-4">
+                    <div class="grid grid-cols-[1fr_auto] w-full text-base font-semibold items-center">
+                        <p>Рифмы/Образы</p>
+                        <span class="justify-self-end text-lg" x-text="rhymes"></span>
+                        <input class="w-full col-span-2 accent-blue-500" x-model.number="rhymes" type="range" name="volume" id="volume" min="1" max="10" value="5">
+                    </div>
+                    <div class="grid grid-cols-[1fr_auto] w-full text-base font-semibold items-center">
+                        <p>Структура</p>
+                        <span class="justify-self-end text-lg" x-text="structure"></span>
+                        <input class="w-full col-span-2 accent-blue-500" x-model.number="structure" type="range" name="volume" id="volume" min="1" max="10" value="5">
+                    </div>
+                    <div class="grid grid-cols-[1fr_auto] w-full text-base font-semibold items-center">
+                        <p>Реализация</p>
+                        <span class="justify-self-end text-lg" x-text="realize"></span>
+                        <input class="w-full col-span-2 accent-blue-500" x-model.number="realize" type="range" name="volume" id="volume" min="1" max="10" value="5">
+                    </div>
+                        <div class="grid grid-cols-[1fr_auto] w-full text-base font-semibold items-center">
+                            <p>Индивидуальность/Харизма</p>
+                        <span class="justify-self-end text-lg" x-text="individual"></span>
+                        <input class="w-full col-span-2 accent-blue-500" x-model.number="individual" type="range" name="volume" id="volume" min="1" max="10" value="5">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-[1fr_auto] w-full text-base font-semibold items-center bg-violet-950 border border-violet-400 p-4 rounded-2xl mb-4">
+                    <p>Атмосфера/Вайб</p>
+                    <span class="justify-self-end text-lg" x-text="atmo"></span>
+                    <input class="w-full col-span-2 accent-violet-400" x-model.number="atmo" type="range" name="volume" id="volume" min="1" max="10" value="1">
+                </div>
+                <div class="justify-self-end">
+                    <p class="relative right-5">
+                        <span class="text-4xl font-bold" x-text="Math.round(total)"></span>
+                        <span class="absolute text-gray-400">/90</span>
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+</body>
+</html>
